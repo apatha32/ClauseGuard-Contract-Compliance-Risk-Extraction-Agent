@@ -1,0 +1,22 @@
+{
+  "name": "@clauseguard/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed:cuad": "tsx --env-file=../.env seed-cuad.ts",
+    "embed:contracts": "tsx --env-file=../.env embed-contracts.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clauseguard/ingestion": "*",
+    "@clauseguard/schemas": "*",
+    "@supabase/supabase-js": "^2.45.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.15",
+    "tsx": "^4.16.5",
+    "typescript": "^5.5.4"
+  }
+}

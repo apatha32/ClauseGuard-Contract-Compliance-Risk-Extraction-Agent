@@ -1,0 +1,23 @@
+{
+  "name": "clauseguard",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "scripts"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @clauseguard/web",
+    "dev:api": "npm run dev -w @clauseguard/api",
+    "build": "npm run build -w @clauseguard/schemas --if-present && npm run build -w @clauseguard/api && npm run build -w @clauseguard/web",
+    "typecheck": "npm run typecheck -w @clauseguard/schemas && npm run typecheck -w @clauseguard/ingestion && npm run typecheck -w @clauseguard/api && tsc --noEmit -p apps/web/tsconfig.json && npm run typecheck -w @clauseguard/scripts",
+    "seed:cuad": "npm run seed:cuad -w @clauseguard/scripts",
+    "embed:contracts": "npm run embed:contracts -w @clauseguard/scripts",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
