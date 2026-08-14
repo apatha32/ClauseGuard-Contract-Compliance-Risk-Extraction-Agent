@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClauseGuard</title>
+<meta name="description" content="ClauseGuard is a contract compliance and risk extraction agent that identifies key clauses in commercial contracts, flags deviations from configurable policy, and grounds every claim in exact source text.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --bg-alt: #f6f7f8;
+    --text: #1a1d21;
+    --text-muted: #565c66;
+    --border: #e2e4e8;
+    --accent: #1f4d3a;
+    --accent-contrast: #ffffff;
+    --code-bg: #f0f1f3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --bg-alt: #1b1e23;
+      --text: #e7e9ec;
+      --text-muted: #9aa0aa;
+      --border: #2b2f36;
+      --accent: #6fbf9a;
+      --accent-contrast: #0e1a15;
+      --code-bg: #1f2329;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  header.top {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+  }
+  header.top .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .wordmark {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .top-links {
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border-color: var(--accent);
+  }
+  .btn.disabled {
+    color: var(--text-muted);
+    cursor: default;
+    pointer-events: none;
+  }
+  main { padding: 56px 0 72px; }
+  section { margin-bottom: 48px; }
+  section:last-of-type { margin-bottom: 0; }
+  h1 {
+    font-size: 30px;
+    font-weight: 650;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .tagline {
+    font-size: 17px;
+    color: var(--text-muted);
+    margin: 0 0 28px;
+  }
+  h2 {
+    font-size: 13px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 16px;
+  }
+  p { margin: 0 0 14px; }
+  p:last-child { margin-bottom: 0; }
+  .status-note {
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 0 0 32px;
+  }
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 32px;
+  }
+  .stack-group h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .stack-group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .stack-group li {
+    padding: 3px 0;
+  }
+  ol.pipeline {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+  ol.pipeline li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 22px;
+  }
+  ol.pipeline li:last-child { margin-bottom: 0; }
+  ol.pipeline li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  ol.pipeline strong { font-weight: 600; }
+  ol.pipeline .desc {
+    color: var(--text-muted);
+    font-size: 14.5px;
+    margin-top: 3px;
+  }
+  .features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 28px;
+  }
+  .feature h3 {
+    font-size: 14.5px;
+    font-weight: 600;
+    margin: 0 0 5px;
+  }
+  .feature p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .categories span {
+    font-size: 12.5px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 9px;
+    color: var(--text-muted);
+  }
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 0;
+  }
+  footer .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer .links {
+    display: flex;
+    gap: 18px;
+  }
+  footer a {
+    color: var(--text-muted);
+    font-size: 14px;
+    text-decoration: none;
+  }
+  footer a:hover { color: var(--text); }
+  footer .meta {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  @media (max-width: 560px) {
+    .stack-grid, .features { grid-template-columns: 1fr; }
+    h1 { font-size: 25px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="wordmark">ClauseGuard</div>
+    <div class="top-links">
+      <a class="btn" href="https://github.com/apatha32/ClauseGuard-Contract-Compliance-Risk-Extraction-Agent" target="_blank" rel="noopener">Repository</a>
+      <span class="btn disabled" title="Will be added once the project is deployed">Live Demo, Coming Soon</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <h1>ClauseGuard</h1>
+    <p class="tagline">A contract compliance and risk extraction agent for commercial legal documents.</p>
+    <div class="status-note">
+      This project is under active development. The repository link above reflects current progress. The live demo link will be added once the application is deployed.
+    </div>
+  </section>
+
+  <section>
+    <h2>Overview</h2>
+    <p>
+      Organizations that manage large volumes of vendor and customer contracts rely on legal and compliance teams to manually review terms such as liability caps, indemnification, and termination conditions. This review process is slow and difficult to scale.
+    </p>
+    <p>
+      ClauseGuard ingests a contract, extracts and classifies key clauses, and flags deviations from a configurable acceptable policy. Every extracted claim is grounded in the exact source text it was drawn from, so a reviewer can verify a finding in seconds rather than rereading the full document. The system is built and evaluated on the Contract Understanding Atticus Dataset (CUAD), a set of over 500 commercial contracts with more than 13,000 expert clause annotations, which serves as ground truth for measuring extraction accuracy.
+    </p>
+  </section>
+
+  <section>
+    <h2>Tech Stack</h2>
+    <div class="stack-grid">
+      <div class="stack-group">
+        <h3>Frontend</h3>
+        <ul>
+          <li>Next.js 14, App Router</li>
+          <li>TypeScript</li>
+          <li>Tailwind CSS</li>
+          <li>shadcn/ui</li>
+          <li>Recharts</li>
+        </ul>
+      </div>
+      <div class="stack-group">
+        <h3>Backend</h3>
+        <ul>
+          <li>Node.js</li>
+          <li>Fastify</li>
+          <li>TypeScript</li>
+          <li>Zod, shared validation schemas</li>
+        </ul>
+      </div>
+      <div class="stack-group">
+        <h3>Data and AI</h3>
+        <ul>
+          <li>PostgreSQL, via Supabase</li>
+          <li>pgvector, for embedding storage</li>
+          <li>Anthropic Claude, structured extraction</li>
+          <li>Voyage AI, legal domain embeddings</li>
+        </ul>
+      </div>
+      <div class="stack-group">
+        <h3>Infrastructure</h3>
+        <ul>
+          <li>Supabase Auth</li>
+          <li>npm workspaces monorepo</li>
+          <li>Vercel, frontend hosting</li>
+          <li>Railway or Render, backend hosting</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How It Was Built</h2>
+    <ol class="pipeline">
+      <li>
+        <strong>Data ingestion</strong>
+        <div class="desc">The CUAD dataset is parsed into a Postgres schema of contracts and clause labels, restricted to ten target clause categories, with a repeatable seed script.</div>
+      </li>
+      <li>
+        <strong>Chunking and embedding</strong>
+        <div class="desc">Contract text is split into paragraph level chunks with exact character offsets preserved, then embedded with a legal domain model and stored in pgvector for retrieval.</div>
+      </li>
+      <li>
+        <strong>Clause extraction</strong>
+        <div class="desc">Claude performs structured tool use extraction across the ten target categories. Output is validated against a shared Zod schema and stored with source character offsets, so every claim traces back to an exact span in the document.</div>
+      </li>
+      <li>
+        <strong>Risk policy engine</strong>
+        <div class="desc">A YAML configurable rule set defines acceptable ranges per clause type. Extracted clauses are compared against policy and flagged by severity when they deviate.</div>
+      </li>
+      <li>
+        <strong>Evaluation harness</strong>
+        <div class="desc">Extraction output is scored against CUAD expert labels for precision, recall, and F1 per clause category, along with hallucination rate and abstention accuracy.</div>
+      </li>
+      <li>
+        <strong>Dashboard</strong>
+        <div class="desc">A Next.js interface for uploading contracts, reviewing source text alongside highlighted clauses, viewing risk flags, and tracking evaluation metrics.</div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Key Features</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>Grounded citations</h3>
+        <p>Every extracted clause maps to an exact character span in the source document. If a claim cannot be grounded, the system abstains rather than guess.</p>
+      </div>
+      <div class="feature">
+        <h3>Quantified accuracy</h3>
+        <p>Extraction quality is measured against CUAD expert labels using precision, recall, F1, hallucination rate, and abstention accuracy, not qualitative review alone.</p>
+      </div>
+      <div class="feature">
+        <h3>Configurable risk policy</h3>
+        <p>Acceptable ranges per clause type are defined in YAML, so compliance rules can be updated without changing application code.</p>
+      </div>
+      <div class="feature">
+        <h3>Domain specific retrieval</h3>
+        <p>A legal domain embedding model combined with exact clause type matching supports hybrid retrieval over long contract documents.</p>
+      </div>
+      <div class="feature">
+        <h3>Type safe pipeline</h3>
+        <p>Shared Zod schemas enforce a single source of truth for data shapes across ingestion, extraction, and the API layer.</p>
+      </div>
+      <div class="feature">
+        <h3>Single language stack</h3>
+        <p>A TypeScript monorepo across frontend, backend, and shared packages keeps the system consistent and straightforward to reason about.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Clause Categories Tracked</h2>
+    <p>ClauseGuard targets ten clause categories drawn from the CUAD taxonomy, selected for their relevance to compliance review.</p>
+    <div class="categories">
+      <span>Governing Law</span>
+      <span>Termination for Convenience</span>
+      <span>Cap on Liability</span>
+      <span>Uncapped Liability</span>
+      <span>Non-Compete</span>
+      <span>Exclusivity</span>
+      <span>IP Ownership Assignment</span>
+      <span>Anti-Assignment</span>
+      <span>Change of Control</span>
+      <span>Insurance</span>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="meta">ClauseGuard</div>
+    <div class="links">
+      <a href="https://github.com/apatha32/ClauseGuard-Contract-Compliance-Risk-Extraction-Agent" target="_blank" rel="noopener">Repository</a>
+      <span class="meta">Live demo coming soon</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
