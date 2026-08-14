@@ -6,9 +6,11 @@
   "scripts": {
     "seed:cuad": "tsx --env-file=../.env seed-cuad.ts",
     "embed:contracts": "tsx --env-file=../.env embed-contracts.ts",
+    "extract:clauses": "tsx --env-file=../.env extract-clauses.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clauseguard/extraction": "*",
     "@clauseguard/ingestion": "*",
     "@clauseguard/schemas": "*",
     "@supabase/supabase-js": "^2.45.4",
