@@ -106,12 +106,31 @@ async function main() {
   await writeFile(jsonPath, JSON.stringify(report, null, 2), "utf-8");
   await writeFile(mdPath, renderMarkdownReport(report), "utf-8");
 
+  const { error: insertError } = await supabase.from("eval_reports").upsert(
+    {
+      run_id: report.runId,
+      model: report.modelId,
+      prompt_version: report.promptVersion,
+      contracts_evaluated: report.contractsEvaluated,
+      precision: report.overall.precision,
+      recall: report.overall.recall,
+      f1: report.overall.f1,
+      hallucination_rate: report.hallucinationRate,
+      abstention_accuracy: report.abstentionAccuracy,
+      per_category: report.perCategory,
+      created_at: report.createdAt,
+    },
+    { onConflict: "run_id" },
+  );
+  if (insertError) throw new Error(`Failed to store eval report: ${insertError.message}`);
+
   console.log(`\nContracts evaluated: ${report.contractsEvaluated}`);
   console.log(`Overall: precision=${report.overall.precision.toFixed(3)} recall=${report.overall.recall.toFixed(3)} f1=${report.overall.f1.toFixed(3)}`);
   console.log(`Hallucination rate: ${report.hallucinationRate.toFixed(3)}`);
   console.log(`Abstention accuracy: ${report.abstentionAccuracy.toFixed(3)}`);
   console.log(`\nWrote ${jsonPath}`);
   console.log(`Wrote ${mdPath}`);
+  console.log(`Stored in eval_reports (run_id=${report.runId})`);
 }
 
 main().catch((err) => {

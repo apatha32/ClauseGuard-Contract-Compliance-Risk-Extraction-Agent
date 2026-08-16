@@ -2,26 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 222 47% 6%;
+    --foreground: 210 20% 96%;
+
+    --card: 222 40% 10%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 222 40% 9%;
+    --popover-foreground: 210 20% 96%;
+
+    --primary: 199 89% 60%;
+    --primary-foreground: 222 47% 8%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 20% 96%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 16% 65%;
+
+    --accent: 172 66% 50%;
+    --accent-foreground: 222 47% 8%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 20% 96%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 8%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 222 47% 8%;
+
+    --border: 217 33% 24%;
+    --input: 217 33% 20%;
+    --ring: 199 89% 60%;
+
+    --radius: 1rem;
+
+    --chart-1: 199 89% 60%;
+    --chart-2: 172 66% 50%;
+    --chart-3: 38 92% 55%;
+    --chart-4: 262 83% 68%;
+    --chart-5: 340 82% 62%;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 15% 0%, hsl(199 89% 30% / 0.25), transparent),
+      radial-gradient(ellipse 60% 50% at 85% 20%, hsl(172 66% 30% / 0.18), transparent),
+      radial-gradient(ellipse 60% 40% at 50% 100%, hsl(262 83% 30% / 0.12), transparent);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Frosted-glass surface: the core visual primitive of the dashboard. */
+  .glass {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.35)];
+  }
+
+  .glass-hover {
+    @apply transition-colors hover:bg-white/[0.06] hover:border-white/[0.15];
+  }
+
+  .glass-inset {
+    @apply bg-black/20 border border-white/5;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
   }
 }

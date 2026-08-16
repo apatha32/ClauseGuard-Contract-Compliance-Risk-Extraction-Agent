@@ -1,101 +1,136 @@
-import Image from "next/image";
+import Link from "next/link";
+import {
+  ShieldCheck,
+  ArrowRight,
+  Quote,
+  SlidersHorizontal,
+  FlaskConical,
+  FileText,
+  Tags,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+const FEATURES = [
+  {
+    icon: Quote,
+    title: "Grounded citations",
+    description:
+      "Every extracted clause maps to an exact character span in the source document. If a claim can't be verified against the text, the system abstains instead of guessing.",
+  },
+  {
+    icon: SlidersHorizontal,
+    title: "Configurable risk policy",
+    description:
+      "Acceptable ranges per clause type are defined in YAML, not hardcoded, so compliance rules can change without touching application code.",
+  },
+  {
+    icon: FlaskConical,
+    title: "Quantified accuracy",
+    description:
+      "Extraction quality is scored against CUAD's expert labels: precision, recall, F1, hallucination rate, and abstention accuracy, not qualitative review.",
+  },
+];
+
+async function getPublicStats() {
+  // Landing page is unauthenticated, so this uses the admin client for a
+  // small, non-sensitive set of aggregate counts rather than opening up
+  // public RLS read access to the underlying tables.
+  const supabase = createAdminClient();
+  const [{ count: contractsCount }, { count: clauseLabelsCount }] = await Promise.all([
+    supabase.from("contracts").select("*", { count: "exact", head: true }),
+    supabase.from("clause_labels").select("*", { count: "exact", head: true }),
+  ]);
+  return {
+    contractsCount: contractsCount ?? 0,
+    clauseLabelsCount: clauseLabelsCount ?? 0,
+  };
+}
+
+export default async function LandingPage() {
+  const stats = await getPublicStats();
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="flex min-h-screen flex-col">
+      <header className="flex items-center justify-between px-6 py-6 md:px-12">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-6 w-6 text-primary" />
+          <span className="text-lg font-semibold tracking-tight">ClauseGuard</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost">
+            <Link href="/login">Sign in</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/signup">Get started</Link>
+          </Button>
+        </div>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <main className="flex flex-1 flex-col items-center px-6 py-16 md:px-12 md:py-24">
+        <div className="flex max-w-2xl flex-col items-center gap-6 text-center animate-fade-in-up">
+          <h1 className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+            Contract compliance and risk extraction, grounded in the source text.
+          </h1>
+          <p className="text-balance text-lg text-muted-foreground">
+            ClauseGuard extracts key clauses from commercial contracts, flags deviations from a configurable
+            risk policy, and cites the exact source text for every claim, so a reviewer can verify a finding
+            in seconds instead of rereading the whole document.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg">
+              <Link href="/signup">
+                Get started
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="glass">
+              <a href="https://github.com/apatha32/ClauseGuard-Contract-Compliance-Risk-Extraction-Agent" target="_blank" rel="noopener noreferrer">
+                View on GitHub
+              </a>
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-16 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatCard icon={FileText} label="Contracts in corpus" value={stats.contractsCount.toLocaleString()} />
+          <StatCard icon={Tags} label="Expert clause labels" value={stats.clauseLabelsCount.toLocaleString()} />
+          <StatCard icon={SlidersHorizontal} label="Clause categories tracked" value="10" />
+        </div>
+
+        <div className="mt-24 grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+          {FEATURES.map((feature) => (
+            <Card key={feature.title}>
+              <CardContent className="flex flex-col gap-3 p-6">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <feature.icon className="h-4 w-4" />
+                </div>
+                <h3 className="font-medium">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="border-t border-white/10 px-6 py-6 text-center text-xs text-muted-foreground md:px-12">
+        ClauseGuard — built on the Contract Understanding Atticus Dataset (CUAD).
       </footer>
     </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value }: { icon: typeof FileText; label: string; value: string }) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
+        <Icon className="h-5 w-5 text-primary" />
+        <span className="text-2xl font-semibold tabular-nums">{value}</span>
+        <span className="text-xs text-muted-foreground">{label}</span>
+      </CardContent>
+    </Card>
   );
 }

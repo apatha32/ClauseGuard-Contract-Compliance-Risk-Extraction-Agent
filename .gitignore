@@ -11,6 +11,7 @@ build/
 
 *.log
 npm-debug.log*
+*.tsbuildinfo
 
 .DS_Store
 
