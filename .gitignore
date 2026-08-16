@@ -20,4 +20,6 @@ supabase/.temp
 data/cuad/raw/
 data/cuad/*.zip
 
+eval/reports/
+
 .turbo/

@@ -8,9 +8,11 @@
     "embed:contracts": "tsx --env-file=../.env embed-contracts.ts",
     "extract:clauses": "tsx --env-file=../.env extract-clauses.ts",
     "evaluate:risk": "tsx --env-file=../.env evaluate-risk.ts",
+    "run:eval": "tsx --env-file=../.env run-eval.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clauseguard/eval": "*",
     "@clauseguard/extraction": "*",
     "@clauseguard/ingestion": "*",
     "@clauseguard/risk-engine": "*",
