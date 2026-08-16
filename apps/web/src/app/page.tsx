@@ -117,7 +117,7 @@ export default async function LandingPage() {
       </main>
 
       <footer className="border-t border-white/10 px-6 py-6 text-center text-xs text-muted-foreground md:px-12">
-        ClauseGuard — built on the Contract Understanding Atticus Dataset (CUAD).
+        ClauseGuard, built on the Contract Understanding Atticus Dataset (CUAD). Built by Ambarish with ❤️
       </footer>
     </div>
   );
