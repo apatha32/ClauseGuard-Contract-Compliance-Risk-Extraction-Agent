@@ -1,0 +1,77 @@
+# ClauseGuard default risk policy.
+#
+# Each rule names a clause category (must match packages/schemas
+# CLAUSE_CATEGORIES exactly) and a check the risk engine knows how to run:
+#
+#   must_be_present  - flag if the clause is absent
+#   must_be_absent   - flag if the clause is present
+#   min_value        - flag if a numeric amount parsed from the clause text
+#                       is below `value`; flags with severity "info" instead
+#                       if the clause is present but no amount could be
+#                       parsed automatically (manual review needed)
+#   max_value        - same, but flags amounts above `value`
+#
+# min_value / max_value require `value`, and currently only extract dollar
+# amounts (e.g. liability caps) — see packages/risk-engine/src/value-extraction.ts.
+#
+# This file is meant to be edited per organization; it is not hardcoded
+# into the application.
+
+version: 1
+
+rules:
+  - id: governing-law-required
+    category: Governing Law
+    description: Contracts should specify a governing law jurisdiction.
+    severity: warning
+    check: must_be_present
+
+  - id: cap-on-liability-required
+    category: Cap On Liability
+    description: Contracts should include a cap on liability.
+    severity: critical
+    check: must_be_present
+
+  - id: cap-on-liability-minimum
+    category: Cap On Liability
+    description: When present, the liability cap should be at least $100,000.
+    severity: warning
+    check: min_value
+    value: 100000
+    unit: usd
+
+  - id: uncapped-liability-present
+    category: Uncapped Liability
+    description: Uncapped liability exposure should be reviewed before signing.
+    severity: critical
+    check: must_be_absent
+
+  - id: termination-for-convenience-required
+    category: Termination For Convenience
+    description: Contracts should allow termination for convenience.
+    severity: warning
+    check: must_be_present
+
+  - id: insurance-required
+    category: Insurance
+    description: Contracts should require the counterparty to carry insurance.
+    severity: warning
+    check: must_be_present
+
+  - id: ip-ownership-assignment-required
+    category: Ip Ownership Assignment
+    description: Contracts involving deliverables should assign IP ownership.
+    severity: warning
+    check: must_be_present
+
+  - id: anti-assignment-required
+    category: Anti-Assignment
+    description: Contracts should restrict assignment without consent.
+    severity: info
+    check: must_be_present
+
+  - id: change-of-control-required
+    category: Change Of Control
+    description: Contracts should address change of control events.
+    severity: info
+    check: must_be_present

@@ -7,11 +7,13 @@
     "seed:cuad": "tsx --env-file=../.env seed-cuad.ts",
     "embed:contracts": "tsx --env-file=../.env embed-contracts.ts",
     "extract:clauses": "tsx --env-file=../.env extract-clauses.ts",
+    "evaluate:risk": "tsx --env-file=../.env evaluate-risk.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clauseguard/extraction": "*",
     "@clauseguard/ingestion": "*",
+    "@clauseguard/risk-engine": "*",
     "@clauseguard/schemas": "*",
     "@supabase/supabase-js": "^2.45.4",
     "zod": "^3.23.8"
