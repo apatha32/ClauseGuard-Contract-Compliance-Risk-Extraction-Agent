@@ -5,6 +5,9 @@ import { loadEnv } from "./lib/env.js";
 import { createSupabaseAdminClient } from "./lib/supabase.js";
 import { createAuthPlugin } from "./plugins/auth.js";
 import { healthRoutes } from "./routes/health.js";
+import { contractRoutes } from "./routes/contracts.js";
+import { evalRoutes } from "./routes/eval.js";
+import { statsRoutes } from "./routes/stats.js";
 
 async function main() {
   const env = loadEnv();
@@ -17,14 +20,16 @@ async function main() {
   });
 
   await fastify.register(cors, { origin: env.CORS_ORIGIN });
-  await fastify.register(multipart);
+  await fastify.register(multipart, { limits: { fileSize: 2 * 1024 * 1024 } });
 
   const supabaseAdmin = createSupabaseAdminClient(env);
   fastify.decorate("supabaseAdmin", supabaseAdmin);
   await fastify.register(createAuthPlugin(supabaseAdmin));
 
   await fastify.register(healthRoutes);
-  // Registered in later phases: contracts, clauses, risk-flags, eval routes.
+  await fastify.register(contractRoutes);
+  await fastify.register(evalRoutes);
+  await fastify.register(statsRoutes);
 
   await fastify.listen({ port: env.PORT, host: "0.0.0.0" });
 }
