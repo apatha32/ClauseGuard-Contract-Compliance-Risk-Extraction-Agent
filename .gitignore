@@ -24,3 +24,5 @@ data/cuad/*.zip
 eval/reports/
 
 .turbo/
+
+.vercel/
