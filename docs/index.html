@@ -5,413 +5,820 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClauseGuard</title>
 <meta name="description" content="ClauseGuard is a contract compliance and risk extraction agent that identifies key clauses in commercial contracts, flags deviations from configurable policy, and grounds every claim in exact source text.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add("js");</script>
 <style>
   :root {
-    color-scheme: light dark;
-    --bg: #ffffff;
-    --bg-alt: #f6f7f8;
-    --text: #1a1d21;
-    --text-muted: #565c66;
-    --border: #e2e4e8;
-    --accent: #1f4d3a;
+    color-scheme: light;
+    --bg: #fbfbf9;
+    --bg-alt: #f2f3f0;
+    --surface: #ffffff;
+    --text: #15181c;
+    --text-muted: #5a616b;
+    --border: #e1e3df;
+    --accent: #1d6b4f;
+    --accent-soft: rgba(29, 107, 79, 0.10);
     --accent-contrast: #ffffff;
-    --code-bg: #f0f1f3;
+    --gold: #a8741a;
+    --gold-soft: rgba(168, 116, 26, 0.14);
+    --critical: #b4322b;
+    --critical-soft: rgba(180, 50, 43, 0.12);
+    --code-bg: #eef0ec;
+    --shadow: 0 1px 2px rgba(20, 24, 28, 0.04), 0 8px 24px rgba(20, 24, 28, 0.06);
+    --grid-line: rgba(20, 24, 28, 0.05);
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14161a;
-      --bg-alt: #1b1e23;
-      --text: #e7e9ec;
-      --text-muted: #9aa0aa;
-      --border: #2b2f36;
-      --accent: #6fbf9a;
-      --accent-contrast: #0e1a15;
-      --code-bg: #1f2329;
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1113;
+      --bg-alt: #13171a;
+      --surface: #161b1e;
+      --text: #e8ebe9;
+      --text-muted: #98a19d;
+      --border: #263029;
+      --accent: #5cc79a;
+      --accent-soft: rgba(92, 199, 154, 0.12);
+      --accent-contrast: #0b1712;
+      --gold: #e0b45c;
+      --gold-soft: rgba(224, 180, 92, 0.14);
+      --critical: #ef7a70;
+      --critical-soft: rgba(239, 122, 112, 0.14);
+      --code-bg: #1c2225;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+      --grid-line: rgba(255, 255, 255, 0.035);
     }
   }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1113;
+    --bg-alt: #13171a;
+    --surface: #161b1e;
+    --text: #e8ebe9;
+    --text-muted: #98a19d;
+    --border: #263029;
+    --accent: #5cc79a;
+    --accent-soft: rgba(92, 199, 154, 0.12);
+    --accent-contrast: #0b1712;
+    --gold: #e0b45c;
+    --gold-soft: rgba(224, 180, 92, 0.14);
+    --critical: #ef7a70;
+    --critical-soft: rgba(239, 122, 112, 0.14);
+    --code-bg: #1c2225;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+    --grid-line: rgba(255, 255, 255, 0.035);
+  }
+
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    transition: background-color .35s ease, color .35s ease;
   }
-  .wrap {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 0 24px;
+  a { color: inherit; }
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- Nav ---------- */
+  .progress {
+    position: fixed; top: 0; left: 0; height: 2px; width: 100%;
+    background: var(--accent); transform-origin: 0 50%; transform: scaleX(0);
+    z-index: 60;
   }
   header.top {
-    border-bottom: 1px solid var(--border);
-    padding: 20px 0;
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: saturate(160%) blur(12px);
+    -webkit-backdrop-filter: saturate(160%) blur(12px);
+    border-bottom: 1px solid transparent;
+    transition: border-color .3s ease;
   }
+  header.top.scrolled { border-bottom-color: var(--border); }
   header.top .wrap {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px;
   }
-  .wordmark {
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+  .wordmark { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 16px; text-decoration: none; }
+  .wordmark svg { width: 26px; height: 26px; color: var(--accent); }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-links a {
+    font-size: 14px; color: var(--text-muted); text-decoration: none;
+    padding: 6px 10px; border-radius: 6px; transition: color .2s, background-color .2s;
   }
-  .top-links {
-    display: flex;
-    gap: 10px;
+  .nav-links a:hover, .nav-links a.active { color: var(--text); background: var(--accent-soft); }
+  .nav-actions { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .2s, transform .2s;
   }
+  .icon-btn:hover { border-color: var(--accent); }
+  .icon-btn svg { width: 17px; height: 17px; }
+
   .btn {
-    display: inline-block;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 16px;
-    border-radius: 6px;
-    text-decoration: none;
-    border: 1px solid var(--border);
-    color: var(--text);
-    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 550; padding: 9px 16px; border-radius: 8px;
+    text-decoration: none; border: 1px solid var(--border); color: var(--text);
+    background: var(--surface); white-space: nowrap; cursor: pointer;
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
   }
-  .btn:hover { border-color: var(--accent); }
-  .btn.primary {
-    background: var(--accent);
-    color: var(--accent-contrast);
-    border-color: var(--accent);
+  .btn:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn.primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .btn svg { width: 16px; height: 16px; transition: transform .2s ease; }
+  .btn:hover svg.arrow { transform: translateX(3px); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; padding: 72px 0 56px;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+    mask-image: linear-gradient(to bottom, #000 70%, transparent);
   }
-  .btn.disabled {
-    color: var(--text-muted);
-    cursor: default;
-    pointer-events: none;
+  .hero-glow {
+    position: absolute; inset: -20% -10% auto auto; width: 620px; height: 620px; pointer-events: none;
+    background: radial-gradient(closest-side, var(--accent-soft), transparent);
+    animation: drift 14s ease-in-out infinite alternate;
   }
-  main { padding: 56px 0 72px; }
-  section { margin-bottom: 48px; }
-  section:last-of-type { margin-bottom: 0; }
+  @keyframes drift { to { transform: translate(-80px, 60px) scale(1.1); } }
+  .hero .wrap { position: relative; display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: .04em; color: var(--accent);
+    background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    padding: 5px 11px; border-radius: 999px; margin-bottom: 20px;
+  }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--accent-soft); } 50% { box-shadow: 0 0 0 6px transparent; opacity: .6; } }
   h1 {
-    font-size: 30px;
-    font-weight: 650;
-    margin: 0 0 10px;
-    letter-spacing: -0.01em;
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: clamp(36px, 5.2vw, 56px); line-height: 1.06; font-weight: 600;
+    letter-spacing: -0.02em; margin: 0 0 18px; text-wrap: balance;
   }
-  .tagline {
-    font-size: 17px;
-    color: var(--text-muted);
-    margin: 0 0 28px;
+  h1 .hl { color: var(--accent); }
+  .lede { font-size: 18px; color: var(--text-muted); margin: 0 0 30px; max-width: 520px; text-wrap: pretty; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* Hero mock: a contract being read */
+  .mock {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); overflow: hidden;
   }
+  .mock-bar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted);
+  }
+  .mock-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--border); display: inline-block; }
+  .mock-bar span { margin-left: 6px; }
+  .mock-body { display: grid; grid-template-columns: 1.4fr 1fr; }
+  .doc { padding: 18px 18px 20px; font-family: "Source Serif 4", Georgia, serif; font-size: 12.5px; line-height: 1.75; color: var(--text-muted); border-right: 1px solid var(--border); }
+  .doc p { margin: 0 0 10px; }
+  .doc mark {
+    background: linear-gradient(var(--accent-soft), var(--accent-soft)) no-repeat 0 0 / 0% 100%;
+    color: inherit; border-radius: 2px; padding: 1px 0;
+    animation: sweep 9s ease-in-out infinite;
+  }
+  .doc mark.m2 { animation-delay: 1.4s; }
+  .doc mark.m3 { animation-delay: 2.8s; background-image: linear-gradient(var(--critical-soft), var(--critical-soft)); }
+  @keyframes sweep {
+    0%, 6% { background-size: 0% 100%; color: var(--text-muted); }
+    16%, 82% { background-size: 100% 100%; color: var(--text); }
+    92%, 100% { background-size: 0% 100%; color: var(--text-muted); }
+  }
+  .checklist { padding: 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .checklist h4 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); font-weight: 600; }
+  .ck {
+    display: flex; align-items: center; gap: 8px; font-size: 12px;
+    padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border);
+    animation: ckin 9s ease-in-out infinite;
+  }
+  .ck .box {
+    width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--border); flex: none;
+    display: grid; place-items: center; transition: all .2s;
+  }
+  .ck .box::after { content: ""; width: 6px; height: 3px; border: solid var(--accent-contrast); border-width: 0 0 1.5px 1.5px; transform: rotate(-45deg) translateY(-1px); opacity: 0; }
+  .ck.c2 { animation-delay: 1.4s; } .ck.c3 { animation-delay: 2.8s; }
+  .ck.c2 .box, .ck.c2 .box::after { animation-delay: 1.4s; }
+  .ck .box, .ck .box::after { animation: tick 9s ease-in-out infinite; }
+  .ck.c3 .box, .ck.c3 .box::after { animation-delay: 2.8s; }
+  @keyframes ckin { 0%, 10% { border-color: var(--border); } 18%, 82% { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); } 92%,100% { border-color: var(--border); } }
+  @keyframes tick { 0%, 12% { background: transparent; opacity: 1; } 18%, 82% { background: var(--accent); border-color: var(--accent); opacity: 1; } 92%, 100% { background: transparent; } }
+  .ck.muted { color: var(--text-muted); animation: none; }
+  .flag {
+    margin-top: 6px; font-size: 11.5px; line-height: 1.45; padding: 9px 10px; border-radius: 8px;
+    background: var(--critical-soft); color: var(--critical); border: 1px solid color-mix(in srgb, var(--critical) 35%, transparent);
+    animation: flagin 9s ease-in-out infinite; animation-delay: 3.4s; opacity: 0;
+  }
+  .flag strong { display: block; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; }
+  @keyframes flagin { 0%, 8% { opacity: 0; transform: translateY(8px); } 16%, 78% { opacity: 1; transform: none; } 88%, 100% { opacity: 0; transform: translateY(8px); } }
+
+  /* ---------- Stats ---------- */
+  .stats { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+  .stats .wrap { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .stat { padding: 26px 16px; border-left: 1px solid var(--border); }
+  .stat:first-child { border-left: 0; padding-left: 0; }
+  .stat .num { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .stat .lbl { font-size: 13px; color: var(--text-muted); }
+
+  /* ---------- Sections ---------- */
+  main section { padding: 88px 0 0; }
+  main section:last-child { padding-bottom: 96px; }
+  .kicker { font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--accent); margin: 0 0 10px; }
   h2 {
-    font-size: 13px;
-    font-weight: 650;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-    margin: 0 0 16px;
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: clamp(26px, 3.2vw, 36px); font-weight: 600; letter-spacing: -0.015em; line-height: 1.15;
+    margin: 0 0 14px; text-wrap: balance;
   }
+  .sub { color: var(--text-muted); font-size: 16.5px; max-width: 680px; margin: 0 0 36px; text-wrap: pretty; }
   p { margin: 0 0 14px; }
-  p:last-child { margin-bottom: 0; }
-  .status-note {
-    font-size: 13px;
-    color: var(--text-muted);
-    background: var(--bg-alt);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 14px;
-    margin: 0 0 32px;
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
   }
-  .stack-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px 32px;
+
+  /* Demo credentials */
+  .demo {
+    display: grid; grid-template-columns: 1fr 1.1fr; gap: 0; overflow: hidden;
   }
-  .stack-group h3 {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 8px;
+  .demo-copy { padding: 30px; }
+  .demo-copy h3 { margin: 0 0 8px; font-size: 19px; }
+  .demo-copy p { color: var(--text-muted); font-size: 14.5px; }
+  .demo-creds {
+    padding: 30px; background: var(--bg-alt); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 12px; justify-content: center;
   }
-  .stack-group ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    color: var(--text-muted);
-    font-size: 14px;
+  .cred { display: flex; align-items: center; gap: 10px; }
+  .cred label, .cred .lbl { width: 76px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); flex: none; }
+  .cred code {
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 13.5px;
   }
-  .stack-group li {
-    padding: 3px 0;
+  .copy {
+    flex: none; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border-radius: 8px; height: 40px; padding: 0 12px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 550;
+    transition: border-color .2s, background-color .2s, color .2s;
   }
-  ol.pipeline {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    counter-reset: step;
+  .copy:hover { border-color: var(--accent); }
+  .copy.done { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .note { font-size: 12.5px; color: var(--text-muted); margin: 4px 0 0; }
+
+  /* Steps */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: s; }
+  .step { padding: 22px; position: relative; counter-increment: s; }
+  .step:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); box-shadow: var(--shadow); }
+  .step::before {
+    content: "0" counter(s); font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 500;
+    color: var(--accent); display: block; margin-bottom: 14px;
   }
-  ol.pipeline li {
-    counter-increment: step;
-    position: relative;
-    padding-left: 40px;
-    margin-bottom: 22px;
+  .step h3 { font-size: 15.5px; margin: 0 0 6px; }
+  .step p { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+  /* Diagram */
+  .diagram-card { padding: 20px; }
+  .diagram-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .diagram-scroll svg { display: block; width: 100%; min-width: 760px; height: auto; }
+  .dg-box { fill: var(--surface); stroke: var(--border); stroke-width: 1.2; transition: stroke .2s, fill .2s; }
+  .dg-group { fill: var(--accent-soft); stroke: color-mix(in srgb, var(--accent) 35%, transparent); stroke-dasharray: 4 4; }
+  .dg-ext { fill: var(--gold-soft); stroke: color-mix(in srgb, var(--gold) 40%, transparent); }
+  .dg-db { fill: var(--bg-alt); stroke: var(--border); }
+  .dg-title { fill: var(--text); font: 600 13.5px "Inter", sans-serif; }
+  .dg-meta { fill: var(--text-muted); font: 400 11px "Inter", sans-serif; }
+  .dg-tag { fill: var(--accent); font: 500 10.5px "JetBrains Mono", monospace; letter-spacing: .03em; }
+  .dg-gold { fill: var(--gold); }
+  .dg-chip { fill: var(--surface); stroke: var(--border); }
+  .dg-edge { fill: none; stroke: var(--text-muted); stroke-opacity: .55; stroke-width: 1.4; stroke-dasharray: 5 5; animation: flow 1.2s linear infinite; }
+  .dg-edge.hot { stroke: var(--accent); stroke-opacity: 1; }
+  .dg-label { fill: var(--text-muted); font: 500 10px "JetBrains Mono", monospace; }
+  .dg-pulse { fill: var(--accent); }
+  @keyframes flow { to { stroke-dashoffset: -20; } }
+  .node { cursor: pointer; outline: none; }
+  .node:hover .dg-box, .node:focus-visible .dg-box, .node.on .dg-box { stroke: var(--accent); stroke-width: 1.8; }
+  .diagram.dim .node:not(.on) { opacity: .45; }
+  .node { transition: opacity .25s ease; }
+  .dg-info {
+    margin-top: 16px; display: grid; grid-template-columns: 180px 1fr; gap: 16px; align-items: start;
+    border-top: 1px solid var(--border); padding-top: 16px; min-height: 76px;
   }
-  ol.pipeline li:last-child { margin-bottom: 0; }
-  ol.pipeline li::before {
-    content: counter(step);
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 26px;
-    height: 26px;
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
+  .dg-info .name { font-weight: 600; font-size: 14.5px; }
+  .dg-info .where { font-size: 12px; color: var(--accent); font-family: "JetBrains Mono", monospace; }
+  .dg-info .body { color: var(--text-muted); font-size: 14px; transition: opacity .2s ease; }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 12.5px; color: var(--text-muted); margin-top: 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 14px; height: 10px; border-radius: 3px; display: inline-block; border: 1px solid var(--border); }
+
+  /* Pipeline */
+  .pipeline { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; position: relative; }
+  .pipeline::before {
+    content: ""; position: absolute; top: 19px; left: 8%; right: 8%; height: 2px;
+    background: linear-gradient(90deg, var(--accent) var(--fill, 0%), var(--border) var(--fill, 0%));
+    transition: --fill 1.6s ease;
   }
-  ol.pipeline strong { font-weight: 600; }
-  ol.pipeline .desc {
-    color: var(--text-muted);
-    font-size: 14.5px;
-    margin-top: 3px;
+  @property --fill { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+  .pipeline.in::before { --fill: 100%; }
+  .pipe { position: relative; padding: 0 10px; text-align: center; }
+  .pipe .bead {
+    width: 40px; height: 40px; margin: 0 auto 14px; border-radius: 50%;
+    background: var(--surface); border: 2px solid var(--border); position: relative; z-index: 1;
+    display: grid; place-items: center; font: 500 12px "JetBrains Mono", monospace; color: var(--text-muted);
+    transition: border-color .4s ease, color .4s ease, background-color .4s ease;
   }
-  .features {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px 28px;
+  .pipeline.in .bead { border-color: var(--accent); color: var(--accent); }
+  .pipe h3 { font-size: 14.5px; margin: 0 0 6px; }
+  .pipe p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+  /* Grounding callout */
+  .ground { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
+  .ground .card { padding: 22px; }
+  .ground h3 { margin: 0 0 8px; font-size: 15.5px; }
+  .ground p { font-size: 14px; color: var(--text-muted); margin: 0; }
+  .codeblock {
+    margin-top: 14px; font-size: 12.5px; line-height: 1.7; background: var(--code-bg);
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre;
   }
-  .feature h3 {
-    font-size: 14.5px;
-    font-weight: 600;
-    margin: 0 0 5px;
+  .codeblock .k { color: var(--accent); } .codeblock .c { color: var(--text-muted); } .codeblock .s { color: var(--gold); }
+
+  /* Eval */
+  .eval-grid { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+  .eval-summary { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .ring { position: relative; width: 132px; height: 132px; margin: 0 auto 4px; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 10; }
+  .ring .track { stroke: var(--bg-alt); }
+  .ring .val { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 339.3; stroke-dashoffset: 339.3; transition: stroke-dashoffset 1.6s cubic-bezier(.2,.7,.2,1); }
+  .ring .center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .ring .center b { font-size: 26px; letter-spacing: -0.02em; display: block; line-height: 1; }
+  .ring .center small { font-size: 11px; color: var(--text-muted); letter-spacing: .06em; text-transform: uppercase; }
+  .kv { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .kv span { color: var(--text-muted); }
+  .kv b { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .eval-meta { font-size: 12px; color: var(--text-muted); }
+  .bars { padding: 22px 24px; }
+  .bars-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .bars-head h3 { margin: 0; font-size: 15.5px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; background: var(--bg-alt); }
+  .seg button {
+    border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: 12.5px; font-weight: 550;
+    padding: 5px 11px; border-radius: 6px; cursor: pointer; transition: background-color .2s, color .2s;
   }
-  .feature p {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin: 0;
+  .seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .bar { display: grid; grid-template-columns: 190px 1fr 52px; align-items: center; gap: 12px; padding: 6px 0; font-size: 13px; }
+  .bar .name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar .track { height: 10px; background: var(--bg-alt); border-radius: 5px; overflow: hidden; }
+  .bar .fill { height: 100%; width: 0; border-radius: 5px; background: var(--accent); transition: width 1s cubic-bezier(.2,.7,.2,1), background-color .3s; }
+  .bar .fill.low { background: var(--gold); }
+  .bar .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+
+  /* Features */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .feature { padding: 22px; }
+  .feature:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+  .feature .ico {
+    width: 36px; height: 36px; border-radius: 9px; background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; margin-bottom: 14px;
   }
-  .categories {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 4px;
-  }
+  .feature .ico svg { width: 18px; height: 18px; }
+  .feature h3 { font-size: 15px; margin: 0 0 6px; }
+  .feature p { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+  /* Stack */
+  .stack { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stack .card { padding: 20px; }
+  .stack h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin: 0 0 12px; font-weight: 600; }
+  .stack ul { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .stack li { padding: 5px 0; border-top: 1px solid var(--border); }
+  .stack li:first-child { border-top: 0; }
+
+  .categories { display: flex; flex-wrap: wrap; gap: 8px; }
   .categories span {
-    font-size: 12.5px;
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 4px 9px;
-    color: var(--text-muted);
+    font-size: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 13px; transition: border-color .2s, color .2s, transform .2s;
   }
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 28px 0;
-  }
-  footer .wrap {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  footer .links {
-    display: flex;
-    gap: 18px;
-  }
-  footer a {
-    color: var(--text-muted);
-    font-size: 14px;
-    text-decoration: none;
-  }
+  .categories span:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+
+  footer { border-top: 1px solid var(--border); padding: 32px 0; background: var(--bg-alt); }
+  footer .wrap { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+  footer .meta { font-size: 13.5px; color: var(--text-muted); }
+  footer .links { display: flex; gap: 18px; }
+  footer a { color: var(--text-muted); font-size: 14px; text-decoration: none; transition: color .2s; }
   footer a:hover { color: var(--text); }
-  footer .meta {
-    font-size: 13px;
-    color: var(--text-muted);
+
+  /* ---------- Reveal ---------- */
+  .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    .js .reveal { opacity: 1; transform: none; }
+    .doc mark { background-size: 100% 100%; color: var(--text); }
+    .ck .box { background: var(--accent); border-color: var(--accent); }
+    .ck .box::after, .flag { opacity: 1; }
   }
-  @media (max-width: 560px) {
-    .stack-grid, .features { grid-template-columns: 1fr; }
-    h1 { font-size: 25px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 960px) {
+    .nav-links { display: none; }
+    .hero .wrap { grid-template-columns: 1fr; }
+    .stats .wrap { grid-template-columns: repeat(3, 1fr); }
+    .stat:nth-child(4) { border-left: 0; padding-left: 0; }
+    .stat:nth-child(n+4) { border-top: 1px solid var(--border); }
+    .steps, .features { grid-template-columns: repeat(2, 1fr); }
+    .stack { grid-template-columns: repeat(2, 1fr); }
+    .pipeline { grid-template-columns: repeat(3, 1fr); row-gap: 28px; }
+    .pipeline::before { display: none; }
+    .eval-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    .nav-actions .btn:not(.primary) { display: none; }
+    .hero { padding: 48px 0 40px; }
+    .mock-body { grid-template-columns: 1fr; }
+    .doc { border-right: 0; border-bottom: 1px solid var(--border); }
+    .stats .wrap { grid-template-columns: repeat(2, 1fr); }
+    .stat, .stat:first-child { padding: 18px 0 18px 14px; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+    .stat:nth-child(odd) { border-left: 0; padding-left: 0; }
+    .stat:nth-child(-n+2) { border-top: 0; }
+    .steps, .features, .stack, .ground, .pipeline { grid-template-columns: 1fr; }
+    .pipe { text-align: left; display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; padding: 0; }
+    .pipe .bead { margin: 0; grid-row: span 2; }
+    .demo { grid-template-columns: 1fr; }
+    .demo-creds { border-left: 0; border-top: 1px solid var(--border); }
+    .demo-copy, .demo-creds { padding: 22px; }
+    .bar { grid-template-columns: 1fr 44px; }
+    .bar .name { grid-column: 1 / -1; }
+    .dg-info { grid-template-columns: 1fr; gap: 4px; }
+    main section { padding-top: 64px; }
   }
 </style>
 </head>
 <body>
 
-<header class="top">
+<div class="progress" id="progress"></div>
+
+<header class="top" id="top">
   <div class="wrap">
-    <div class="wordmark">ClauseGuard</div>
-    <div class="top-links">
-      <a class="btn" href="https://github.com/apatha32/ClauseGuard-Contract-Compliance-Risk-Extraction-Agent" target="_blank" rel="noopener">Repository</a>
-      <a class="btn" href="https://clauseguard-self.vercel.app" target="_blank" rel="noopener">Live Demo</a>
+    <a class="wordmark" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.9 8 10 4.6-1.1 8-5 8-10v-6l-8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+      ClauseGuard
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#demo">Demo</a>
+      <a href="#how">How to use</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#eval">Evaluation</a>
+      <a href="#stack">Stack</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme" type="button" aria-label="Toggle color theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+      <a class="btn" href="https://github.com/apatha32/ClauseGuard-Contract-Compliance-Risk-Extraction-Agent" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        Repository
+      </a>
+      <a class="btn primary" href="https://clauseguard-self.vercel.app" target="_blank" rel="noopener">
+        Live Demo
+        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
     </div>
   </div>
 </header>
 
+<div class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow reveal"><span class="dot"></span>Live in production</div>
+      <h1 class="reveal" style="--d:.05s">Contract review where every claim <span class="hl">points to its source.</span></h1>
+      <p class="lede reveal" style="--d:.12s">ClauseGuard extracts key clauses from commercial contracts with Claude, checks them against a configurable risk policy, and grounds each finding in the exact span of text it came from, so a reviewer can verify it in seconds.</p>
+      <div class="cta reveal" style="--d:.2s">
+        <a class="btn primary" href="#demo">Try the demo
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn" href="#architecture">See the architecture</a>
+      </div>
+    </div>
+
+    <div class="mock reveal" style="--d:.25s" aria-label="Illustration: a contract with highlighted clauses, a clause checklist, and a critical risk flag">
+      <div class="mock-bar"><i></i><i></i><i></i><span class="mono">supply_agreement.txt</span></div>
+      <div class="mock-body">
+        <div class="doc">
+          <p>12.1 <mark class="m1">This Agreement shall be governed by the laws of the State of Delaware</mark>, without regard to its conflict of laws principles.</p>
+          <p>14.3 <mark class="m2">Neither party may assign this Agreement without the prior written consent of the other party</mark>, which shall not be unreasonably withheld.</p>
+          <p>17.2 <mark class="m3">Supplier's indemnification obligations under Section 9 shall not be subject to any limitation</mark> set forth herein.</p>
+        </div>
+        <div class="checklist">
+          <h4>Clauses</h4>
+          <div class="ck c1"><span class="box"></span>Governing Law</div>
+          <div class="ck c2"><span class="box"></span>Anti-Assignment</div>
+          <div class="ck c3"><span class="box"></span>Uncapped Liability</div>
+          <div class="ck muted"><span class="box"></span>Cap on Liability</div>
+          <div class="flag"><strong>Critical</strong>No cap on liability found.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="wrap">
+    <div class="stat reveal"><div class="num" data-count="510">510</div><div class="lbl">CUAD contracts seeded</div></div>
+    <div class="stat reveal" style="--d:.06s"><div class="num" data-count="13000" data-suffix="+">13,000+</div><div class="lbl">Expert clause labels</div></div>
+    <div class="stat reveal" style="--d:.12s"><div class="num" data-count="87.5" data-decimals="1" data-suffix="%">87.5%</div><div class="lbl">Extraction F1</div></div>
+    <div class="stat reveal" style="--d:.18s"><div class="num" data-count="0" data-decimals="1" data-suffix="%">0.0%</div><div class="lbl">Hallucination rate</div></div>
+    <div class="stat reveal" style="--d:.24s"><div class="num" data-count="10">10</div><div class="lbl">Clause categories</div></div>
+  </div>
+</div>
+
 <main class="wrap">
 
-  <section>
-    <h1>ClauseGuard</h1>
-    <p class="tagline">A contract compliance and risk extraction agent for commercial legal documents.</p>
-    <div class="status-note">
-      The live demo above runs against a real deployment: a hosted Postgres database seeded with the full CUAD corpus, a Fastify API, and the Next.js dashboard, all connected to Claude for live clause extraction.
-    </div>
-  </section>
-
-  <section>
-    <h2>How to Use ClauseGuard</h2>
-    <ol class="pipeline">
-      <li>
-        <strong>Create an account</strong>
-        <div class="desc">Open the live demo and sign up with a real email address. Email confirmation is required before you can sign in.</div>
-      </li>
-      <li>
-        <strong>Browse the seeded corpus, or upload your own</strong>
-        <div class="desc">The dashboard's Contracts page lists the full CUAD corpus. To try it on your own document, go to Upload and submit a plain text (.txt) contract, 2MB or smaller.</div>
-      </li>
-      <li>
-        <strong>Review the extracted clauses</strong>
-        <div class="desc">Uploading a contract runs live extraction against Claude for the ten tracked clause categories. Open the contract's detail page to see a clause checklist beside the full source text.</div>
-      </li>
-      <li>
-        <strong>Trace a clause back to its source</strong>
-        <div class="desc">Click any present clause in the checklist to scroll to and highlight the exact span of text it was extracted from.</div>
-      </li>
-      <li>
-        <strong>Check the risk flags</strong>
-        <div class="desc">The Risk Flags tab on a contract lists deviations from the configured policy, ranked by severity: info, warning, or critical.</div>
-      </li>
-      <li>
-        <strong>Review accuracy on the Eval Metrics page</strong>
-        <div class="desc">See precision, recall, F1, hallucination rate, and abstention accuracy, scored against CUAD's expert labels and broken down per clause category.</div>
-      </li>
-    </ol>
-  </section>
-
-  <section>
-    <h2>Overview</h2>
-    <p>
-      Organizations that manage large volumes of vendor and customer contracts rely on legal and compliance teams to manually review terms such as liability caps, indemnification, and termination conditions. This review process is slow and difficult to scale.
-    </p>
-    <p>
-      ClauseGuard ingests a contract, extracts and classifies key clauses, and flags deviations from a configurable acceptable policy. Every extracted claim is grounded in the exact source text it was drawn from, so a reviewer can verify a finding in seconds rather than rereading the full document. The system is built and evaluated on the Contract Understanding Atticus Dataset (CUAD), a set of over 500 commercial contracts with more than 13,000 expert clause annotations, which serves as ground truth for measuring extraction accuracy.
-    </p>
-  </section>
-
-  <section>
-    <h2>Tech Stack</h2>
-    <div class="stack-grid">
-      <div class="stack-group">
-        <h3>Frontend</h3>
-        <ul>
-          <li>Next.js 14, App Router</li>
-          <li>TypeScript</li>
-          <li>Tailwind CSS</li>
-          <li>shadcn/ui</li>
-          <li>Recharts</li>
-        </ul>
+  <section id="demo">
+    <p class="kicker reveal">Demo access</p>
+    <h2 class="reveal">Sign in and look around</h2>
+    <p class="sub reveal">Use the shared demo account to skip sign-up and email confirmation. It has full access to the seeded CUAD corpus, the risk flags, and the evaluation dashboard.</p>
+    <div class="card demo reveal">
+      <div class="demo-copy">
+        <h3>Shared demo account</h3>
+        <p>Open the live demo, choose <strong>Sign in</strong>, and paste the credentials on the right. Prefer your own account? Sign up with a real email address and confirm it before signing in.</p>
+        <p class="note">This account is shared with other visitors. Please don't upload confidential or personal documents.</p>
+        <a class="btn primary" href="https://clauseguard-self.vercel.app/login" target="_blank" rel="noopener" style="margin-top:8px">Open sign-in
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
       </div>
-      <div class="stack-group">
-        <h3>Backend</h3>
-        <ul>
-          <li>Node.js</li>
-          <li>Fastify</li>
-          <li>TypeScript</li>
-          <li>Zod, shared validation schemas</li>
-        </ul>
-      </div>
-      <div class="stack-group">
-        <h3>Data and AI</h3>
-        <ul>
-          <li>PostgreSQL, via Supabase</li>
-          <li>pgvector, for embedding storage</li>
-          <li>Anthropic Claude, structured extraction</li>
-          <li>Voyage AI, legal domain embeddings</li>
-        </ul>
-      </div>
-      <div class="stack-group">
-        <h3>Infrastructure</h3>
-        <ul>
-          <li>Supabase Auth</li>
-          <li>npm workspaces monorepo</li>
-          <li>Vercel, frontend hosting</li>
-          <li>Railway or Render, backend hosting</li>
-        </ul>
+      <div class="demo-creds">
+        <!-- TODO: replace both placeholders with the real demo account before publishing -->
+        <div class="cred"><label>Email</label><code id="demo-email">REPLACE_WITH_DEMO_EMAIL</code><button class="copy" type="button" data-copy="demo-email">Copy</button></div>
+        <div class="cred"><label>Password</label><code id="demo-password">REPLACE_WITH_DEMO_PASSWORD</code><button class="copy" type="button" data-copy="demo-password">Copy</button></div>
       </div>
     </div>
   </section>
 
-  <section>
-    <h2>How It Was Built</h2>
-    <ol class="pipeline">
-      <li>
-        <strong>Data ingestion</strong>
-        <div class="desc">The CUAD dataset is parsed into a Postgres schema of contracts and clause labels, restricted to ten target clause categories, with a repeatable seed script.</div>
-      </li>
-      <li>
-        <strong>Chunking and embedding</strong>
-        <div class="desc">Contract text is split into paragraph level chunks with exact character offsets preserved, then embedded with a legal domain model and stored in pgvector for retrieval.</div>
-      </li>
-      <li>
-        <strong>Clause extraction</strong>
-        <div class="desc">Claude performs structured tool use extraction across the ten target categories. Output is validated against a shared Zod schema and stored with source character offsets, so every claim traces back to an exact span in the document.</div>
-      </li>
-      <li>
-        <strong>Risk policy engine</strong>
-        <div class="desc">A YAML configurable rule set defines acceptable ranges per clause type. Extracted clauses are compared against policy and flagged by severity when they deviate.</div>
-      </li>
-      <li>
-        <strong>Evaluation harness</strong>
-        <div class="desc">Extraction output is scored against CUAD expert labels for precision, recall, and F1 per clause category, along with hallucination rate and abstention accuracy.</div>
-      </li>
-      <li>
-        <strong>Dashboard</strong>
-        <div class="desc">A Next.js interface for uploading contracts, reviewing source text alongside highlighted clauses, viewing risk flags, and tracking evaluation metrics.</div>
-      </li>
-    </ol>
+  <section id="how">
+    <p class="kicker reveal">How to use it</p>
+    <h2 class="reveal">From upload to verified findings in six steps</h2>
+    <p class="sub reveal">Everything below runs against the live deployment: hosted Postgres seeded with CUAD, the Next.js dashboard, and Claude for extraction.</p>
+    <div class="steps">
+      <div class="card step reveal"><h3>Sign in</h3><p>Use the demo account above, or create your own with a real email address and confirm it.</p></div>
+      <div class="card step reveal" style="--d:.06s"><h3>Browse or upload</h3><p>Open <strong>Contracts</strong> for the seeded CUAD corpus, or <strong>Upload</strong> a plain-text (.txt) contract up to 2MB.</p></div>
+      <div class="card step reveal" style="--d:.12s"><h3>Review the extraction</h3><p>Uploads run live extraction for the ten tracked categories. The detail page shows a clause checklist beside the full source text.</p></div>
+      <div class="card step reveal"><h3>Trace to the source</h3><p>Click any present clause to scroll to and highlight the exact span it was extracted from.</p></div>
+      <div class="card step reveal" style="--d:.06s"><h3>Check risk flags</h3><p>The <strong>Risk Flags</strong> tab lists policy deviations ranked by severity: info, warning, or critical.</p></div>
+      <div class="card step reveal" style="--d:.12s"><h3>Inspect accuracy</h3><p><strong>Eval Metrics</strong> shows precision, recall, F1, hallucination rate, and abstention accuracy per category.</p></div>
+    </div>
   </section>
 
-  <section>
-    <h2>Key Features</h2>
-    <div class="features">
-      <div class="feature">
-        <h3>Grounded citations</h3>
-        <p>Every extracted clause maps to an exact character span in the source document. If a claim cannot be grounded, the system abstains rather than guess.</p>
+  <section id="architecture">
+    <p class="kicker reveal">System design</p>
+    <h2 class="reveal">How the pieces fit together</h2>
+    <p class="sub reveal">A TypeScript monorepo deployed across three platforms. The dashboard and the REST API share one set of packages, and every write lands in Supabase. Hover or tap a component for details.</p>
+
+    <div class="card diagram-card reveal">
+      <div class="diagram-scroll">
+        <svg class="diagram" id="diagram" viewBox="0 0 1000 600" role="img" aria-labelledby="dg-t dg-d">
+          <title id="dg-t">ClauseGuard system architecture</title>
+          <desc id="dg-d">Reviewers use the Next.js dashboard on Vercel and API clients use the Fastify API on Railway. Uploads go through the extraction package, which calls Claude, then the risk engine. Offline scripts seed CUAD, embed chunks with Voyage AI, and score evaluations. All data is stored in Supabase Postgres with pgvector and Auth.</desc>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 1 L9 5 L0 9 z" fill="var(--text-muted)"/>
+            </marker>
+          </defs>
+
+          <!-- edges (drawn first so nodes sit on top) -->
+          <g id="edges">
+            <path class="dg-edge" data-e="browser next" id="e1" d="M160 76 V108" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="clients api" id="e2" d="M840 76 V108" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="next extract" id="e3" d="M280 180 H305 V228 H348" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="extract claude" id="e4" d="M652 228 H718" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="ingest voyage" id="e5" d="M652 348 H718" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="batch ingest extract risk eval" id="e6" d="M280 335 H348" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="extract risk ingest eval db" id="e7" d="M500 450 V488" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="next db" id="e8" d="M40 155 H20 V535 H38" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="api db" id="e9" d="M960 145 H980 V535 H962" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="batch db" id="e10" d="M160 410 V488" marker-end="url(#arr)"/>
+            <path class="dg-edge" data-e="extract risk" id="e11" d="M500 256 V262" />
+          </g>
+          <g aria-hidden="true">
+            <text class="dg-label" x="312" y="208">POST /api/upload</text>
+            <text class="dg-label" x="664" y="220">tool use</text>
+            <text class="dg-label" x="660" y="340">embed</text>
+            <text class="dg-label" x="290" y="327">npm run</text>
+            <text class="dg-label" x="172" y="98">HTTPS</text>
+            <text class="dg-label" x="852" y="98">Bearer</text>
+          </g>
+
+          <!-- request pulses -->
+          <g aria-hidden="true">
+            <circle class="dg-pulse" r="3.5"><animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#e3"/></animateMotion></circle>
+            <circle class="dg-pulse" r="3.5"><animateMotion dur="1.6s" begin=".6s" repeatCount="indefinite"><mpath href="#e4"/></animateMotion></circle>
+            <circle class="dg-pulse" r="3.5"><animateMotion dur="1.4s" begin="1s" repeatCount="indefinite"><mpath href="#e7"/></animateMotion></circle>
+            <circle class="dg-pulse" r="3.5"><animateMotion dur="4s" repeatCount="indefinite"><mpath href="#e8"/></animateMotion></circle>
+            <circle class="dg-pulse" r="3.5"><animateMotion dur="4s" begin="2s" repeatCount="indefinite"><mpath href="#e9"/></animateMotion></circle>
+          </g>
+
+          <!-- Column A -->
+          <g class="node" tabindex="0" data-n="browser" data-name="Reviewer" data-where="Browser" data-body="A legal or compliance reviewer signs in with Supabase Auth, uploads contracts, and checks extracted clauses against the highlighted source text.">
+            <rect class="dg-box" x="40" y="20" width="240" height="56" rx="10"/>
+            <text class="dg-title" x="58" y="45">Reviewer</text>
+            <text class="dg-meta" x="58" y="63">Browser · Supabase Auth session</text>
+          </g>
+          <g class="node" tabindex="0" data-n="next" data-name="Next.js dashboard" data-where="apps/web · Vercel" data-body="Next.js 14 App Router. Server Components read contracts, clauses, flags, and eval reports straight from Supabase. The /api/upload route handler stores the file, runs extraction, then evaluates it against the risk policy in one request.">
+            <rect class="dg-box" x="40" y="110" width="240" height="90" rx="10"/>
+            <text class="dg-tag" x="58" y="132">VERCEL</text>
+            <text class="dg-title" x="58" y="154">Next.js 14 dashboard</text>
+            <text class="dg-meta" x="58" y="172">Server Components · Server Actions</text>
+            <text class="dg-meta" x="58" y="188">Route handler: /api/upload</text>
+          </g>
+          <g class="node" tabindex="0" data-n="batch" data-name="Batch scripts" data-where="scripts/ · npm run" data-body="Repeatable jobs run from the repo root: seed the CUAD corpus and ground-truth labels, chunk and embed contracts, run extraction across pending contracts, evaluate risk, and score the eval run.">
+            <rect class="dg-box" x="40" y="260" width="240" height="150" rx="10"/>
+            <text class="dg-tag" x="58" y="282">OFFLINE</text>
+            <text class="dg-title" x="58" y="304">Batch scripts</text>
+            <text class="dg-meta" x="58" y="326">seed:cuad</text>
+            <text class="dg-meta" x="58" y="344">embed · extract:clauses</text>
+            <text class="dg-meta" x="58" y="362">evaluate:risk</text>
+            <text class="dg-meta" x="58" y="380">run:eval</text>
+          </g>
+
+          <!-- Column B: packages -->
+          <rect class="dg-group" x="340" y="110" width="320" height="340" rx="12"/>
+          <text class="dg-tag" x="358" y="134">PACKAGES · TYPESCRIPT MONOREPO</text>
+          <text class="dg-meta" x="358" y="152">Shared Zod schemas: one source of truth for every shape</text>
+          <g class="node" tabindex="0" data-n="extract" data-name="Extraction" data-where="packages/extraction" data-body="Claude returns a verbatim quote per clause category through structured tool use. A hallucination guard re-finds that quote in the source (exact match, then whitespace-normalized) and computes real character offsets. Ungroundable quotes are rejected, so the system abstains instead of guessing. Malformed tool calls are retried.">
+            <rect class="dg-box" x="358" y="200" width="284" height="56" rx="9"/>
+            <text class="dg-title" x="374" y="224">Extraction + grounding guard</text>
+            <text class="dg-meta" x="374" y="242">Verbatim quote → offsets in source</text>
+          </g>
+          <g class="node" tabindex="0" data-n="risk" data-name="Risk engine" data-where="packages/risk-engine" data-body="Loads policy/default.yaml and runs must_be_present, must_be_absent, min_value, and max_value checks. Dollar amounts such as liability caps are parsed from clause text; deviations become info, warning, or critical flags.">
+            <rect class="dg-box" x="358" y="262" width="284" height="56" rx="9"/>
+            <text class="dg-title" x="374" y="286">Risk engine</text>
+            <text class="dg-meta" x="374" y="304">YAML policy → severity-ranked flags</text>
+          </g>
+          <g class="node" tabindex="0" data-n="ingest" data-name="Ingestion" data-where="packages/ingestion" data-body="Loads the CUAD dataset, restricts labels to the ten target categories, and splits contracts into paragraph-level chunks that keep exact character offsets. Chunks are embedded with a legal-domain model and stored in pgvector.">
+            <rect class="dg-box" x="358" y="324" width="284" height="50" rx="9"/>
+            <text class="dg-title" x="374" y="346">Ingestion</text>
+            <text class="dg-meta" x="374" y="363">CUAD loader · chunking · embeddings</text>
+          </g>
+          <g class="node" tabindex="0" data-n="eval" data-name="Evaluation" data-where="packages/eval" data-body="Scores extraction output against CUAD expert labels: precision, recall, and F1 per category, plus hallucination rate and abstention accuracy. Reports are written to the database and to eval/reports as JSON and Markdown.">
+            <rect class="dg-box" x="358" y="380" width="284" height="50" rx="9"/>
+            <text class="dg-title" x="374" y="402">Evaluation harness</text>
+            <text class="dg-meta" x="374" y="419">P / R / F1 · hallucination · abstention</text>
+          </g>
+
+          <!-- Column C -->
+          <g class="node" tabindex="0" data-n="clients" data-name="API clients" data-where="Any HTTP client" data-body="Integrations and scripts that consume ClauseGuard data programmatically with a Supabase bearer token.">
+            <rect class="dg-box" x="720" y="20" width="240" height="56" rx="10"/>
+            <text class="dg-title" x="738" y="45">API clients</text>
+            <text class="dg-meta" x="738" y="63">Integrations · scripts</text>
+          </g>
+          <g class="node" tabindex="0" data-n="api" data-name="Fastify REST API" data-where="apps/api · Railway" data-body="Bearer-token-authenticated REST interface exposing contracts, clauses, risk flags, stats, and eval reports. Responses are validated with the shared Zod schemas. Runs TypeScript directly via tsx.">
+            <rect class="dg-box" x="720" y="110" width="240" height="70" rx="10"/>
+            <text class="dg-tag" x="738" y="132">RAILWAY</text>
+            <text class="dg-title" x="738" y="152">Fastify REST API</text>
+            <text class="dg-meta" x="738" y="169">/contracts · /eval · /stats</text>
+          </g>
+          <g class="node" tabindex="0" data-n="claude" data-name="Anthropic Claude" data-where="External model API" data-body="Performs structured tool-use extraction across the ten clause categories. Its output is never trusted for positions: offsets are always recomputed by the grounding guard.">
+            <rect class="dg-box dg-ext" x="720" y="200" width="240" height="56" rx="10"/>
+            <text class="dg-title" x="738" y="224">Anthropic Claude</text>
+            <text class="dg-meta" x="738" y="242">Structured tool-use extraction</text>
+          </g>
+          <g class="node" tabindex="0" data-n="voyage" data-name="Voyage AI" data-where="External model API" data-body="Legal-domain embedding model used to embed contract chunks for retrieval over long documents.">
+            <rect class="dg-box dg-ext" x="720" y="320" width="240" height="56" rx="10"/>
+            <text class="dg-title" x="738" y="344">Voyage AI</text>
+            <text class="dg-meta" x="738" y="362">Legal-domain embeddings</text>
+          </g>
+
+          <!-- Data layer -->
+          <g class="node" tabindex="0" data-n="db" data-name="Supabase Cloud" data-where="Postgres · pgvector · Auth" data-body="Single system of record: contracts, clause labels, extracted clauses with source offsets, risk flags, embeddings in pgvector, and eval reports. Supabase Auth handles sign-up, email confirmation, and sessions for both the dashboard and the API.">
+            <rect class="dg-box dg-db" x="40" y="490" width="920" height="90" rx="12"/>
+            <text class="dg-tag" x="62" y="514">SUPABASE CLOUD</text>
+            <text class="dg-title" x="62" y="536">Data layer</text>
+            <rect class="dg-chip" x="300" y="512" width="132" height="44" rx="8"/>
+            <text class="dg-title" x="318" y="539" style="font-size:12.5px">PostgreSQL</text>
+            <rect class="dg-chip" x="446" y="512" width="132" height="44" rx="8"/>
+            <text class="dg-title" x="464" y="539" style="font-size:12.5px">pgvector</text>
+            <rect class="dg-chip" x="592" y="512" width="132" height="44" rx="8"/>
+            <text class="dg-title" x="610" y="539" style="font-size:12.5px">Auth</text>
+            <rect class="dg-chip" x="738" y="512" width="196" height="44" rx="8"/>
+            <text class="dg-meta" x="754" y="532">contracts · clauses</text>
+            <text class="dg-meta" x="754" y="548">risk_flags · eval reports</text>
+          </g>
+        </svg>
       </div>
-      <div class="feature">
-        <h3>Quantified accuracy</h3>
-        <p>Extraction quality is measured against CUAD expert labels using precision, recall, F1, hallucination rate, and abstention accuracy, not qualitative review alone.</p>
+      <div class="dg-info" aria-live="polite">
+        <div><div class="name" id="dg-name">Request path</div><div class="where" id="dg-where">upload → extract → ground → flag</div></div>
+        <div class="body" id="dg-body">An upload goes from the dashboard's route handler into the extraction package, which asks Claude for verbatim quotes, grounds each one against the source, then hands the clauses to the risk engine. Clauses and flags are written to Supabase, and the dashboard reads them back with Server Components.</div>
       </div>
-      <div class="feature">
-        <h3>Configurable risk policy</h3>
-        <p>Acceptable ranges per clause type are defined in YAML, so compliance rules can be updated without changing application code.</p>
-      </div>
-      <div class="feature">
-        <h3>Domain specific retrieval</h3>
-        <p>A legal domain embedding model combined with exact clause type matching supports hybrid retrieval over long contract documents.</p>
-      </div>
-      <div class="feature">
-        <h3>Type safe pipeline</h3>
-        <p>Shared Zod schemas enforce a single source of truth for data shapes across ingestion, extraction, and the API layer.</p>
-      </div>
-      <div class="feature">
-        <h3>Single language stack</h3>
-        <p>A TypeScript monorepo across frontend, backend, and shared packages keeps the system consistent and straightforward to reason about.</p>
+      <div class="legend">
+        <span><i style="background:var(--surface)"></i>Service</span>
+        <span><i style="background:var(--accent-soft)"></i>Shared package</span>
+        <span><i style="background:var(--gold-soft)"></i>External model API</span>
+        <span><i style="background:var(--bg-alt)"></i>Data store</span>
       </div>
     </div>
   </section>
 
-  <section>
-    <h2>Clause Categories Tracked</h2>
-    <p>ClauseGuard targets ten clause categories drawn from the CUAD taxonomy, selected for their relevance to compliance review.</p>
-    <div class="categories">
-      <span>Governing Law</span>
-      <span>Termination for Convenience</span>
-      <span>Cap on Liability</span>
-      <span>Uncapped Liability</span>
-      <span>Non-Compete</span>
-      <span>Exclusivity</span>
-      <span>IP Ownership Assignment</span>
-      <span>Anti-Assignment</span>
-      <span>Change of Control</span>
-      <span>Insurance</span>
+  <section id="pipeline">
+    <p class="kicker reveal">How it was built</p>
+    <h2 class="reveal">A six-stage pipeline, each stage measurable</h2>
+    <p class="sub reveal">Built bottom-up from a ground-truth dataset, so every layer could be checked before the next one depended on it.</p>
+    <div class="pipeline" id="pipe">
+      <div class="pipe reveal"><div class="bead">01</div><h3>Ingest</h3><p>CUAD parsed into Postgres with a repeatable seed.</p></div>
+      <div class="pipe reveal" style="--d:.08s"><div class="bead">02</div><h3>Chunk + embed</h3><p>Offset-preserving chunks embedded into pgvector.</p></div>
+      <div class="pipe reveal" style="--d:.16s"><div class="bead">03</div><h3>Extract</h3><p>Claude tool use, validated by shared Zod schemas.</p></div>
+      <div class="pipe reveal" style="--d:.24s"><div class="bead">04</div><h3>Ground</h3><p>Quotes re-found in source, or the clause is rejected.</p></div>
+      <div class="pipe reveal" style="--d:.32s"><div class="bead">05</div><h3>Assess risk</h3><p>YAML policy rules produce severity-ranked flags.</p></div>
+      <div class="pipe reveal" style="--d:.40s"><div class="bead">06</div><h3>Evaluate</h3><p>Scored against CUAD expert labels per category.</p></div>
+    </div>
+
+    <div class="ground">
+      <div class="card reveal">
+        <h3>The model quotes; the code locates</h3>
+        <p>Claude is asked for a verbatim quote, never for character positions. The grounding guard searches the source for that quote itself and only then records offsets, which is why the clause highlight in the dashboard is always exact.</p>
+        <div class="codeblock mono"><span class="c">// packages/extraction/src/grounding.ts</span>
+<span class="k">exact match</span>      → offsets
+<span class="k">normalized match</span> → offsets  <span class="c">// whitespace-tolerant</span>
+<span class="k">no match</span>         → <span class="s">rejected</span>  <span class="c">// abstain, don't guess</span></div>
+      </div>
+      <div class="card reveal" style="--d:.08s">
+        <h3>Policy as configuration</h3>
+        <p>Compliance rules live in <code>policy/default.yaml</code>, so an organization can tighten a rule without touching application code.</p>
+        <div class="codeblock mono"><span class="k">- id:</span> cap-on-liability-minimum
+  <span class="k">category:</span> Cap On Liability
+  <span class="k">severity:</span> <span class="s">warning</span>
+  <span class="k">check:</span> min_value
+  <span class="k">value:</span> 100000</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="eval">
+    <p class="kicker reveal">Evaluation</p>
+    <h2 class="reveal">Measured against expert labels, not vibes</h2>
+    <p class="sub reveal">Latest run scored against CUAD ground truth. Categories where Claude is conservative, such as Cap on Liability, show high precision with lower recall: it abstains rather than inventing a clause.</p>
+    <div class="eval-grid">
+      <div class="card eval-summary reveal">
+        <div class="ring" id="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="val" cx="60" cy="60" r="54" data-pct="87.5"/></svg>
+          <div class="center"><div><b>87.5%</b><small>Overall F1</small></div></div>
+        </div>
+        <div>
+          <div class="kv"><span>Precision</span><b>88.5%</b></div>
+          <div class="kv"><span>Recall</span><b>86.6%</b></div>
+          <div class="kv"><span>Hallucination rate</span><b>0.0%</b></div>
+          <div class="kv"><span>Abstention accuracy</span><b>92.3%</b></div>
+        </div>
+        <div class="eval-meta mono">claude-sonnet-5 · prompt v1 · 33 contracts</div>
+      </div>
+      <div class="card bars reveal" style="--d:.08s">
+        <div class="bars-head">
+          <h3>Per category</h3>
+          <div class="seg" role="group" aria-label="Metric">
+            <button type="button" class="on" data-m="f1">F1</button>
+            <button type="button" data-m="p">Precision</button>
+            <button type="button" data-m="r">Recall</button>
+          </div>
+        </div>
+        <div id="bars"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <p class="kicker reveal">Key features</p>
+    <h2 class="reveal">Designed for reviewers who need to trust the output</h2>
+    <div class="features" style="margin-top:28px">
+      <div class="card feature reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Grounded citations</h3><p>Every extracted clause maps to an exact character span. If a claim can't be grounded, the system abstains.</p></div>
+      <div class="card feature reveal" style="--d:.06s"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h3>Quantified accuracy</h3><p>Precision, recall, F1, hallucination rate, and abstention accuracy against CUAD expert labels.</p></div>
+      <div class="card feature reveal" style="--d:.12s"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg></div><h3>Configurable risk policy</h3><p>Acceptable ranges per clause type live in YAML, so rules change without a code change.</p></div>
+      <div class="card feature reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></div><h3>Domain-specific retrieval</h3><p>Legal-domain embeddings plus exact clause-type matching for hybrid retrieval over long documents.</p></div>
+      <div class="card feature reveal" style="--d:.06s"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h3M16 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3"/></svg></div><h3>Type-safe pipeline</h3><p>Shared Zod schemas enforce one source of truth across ingestion, extraction, and the API.</p></div>
+      <div class="card feature reveal" style="--d:.12s"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div><h3>Single-language stack</h3><p>TypeScript across frontend, backend, and shared packages keeps the system easy to reason about.</p></div>
+    </div>
+  </section>
+
+  <section id="stack">
+    <p class="kicker reveal">Tech stack</p>
+    <h2 class="reveal">Built with</h2>
+    <div class="stack" style="margin-top:28px">
+      <div class="card reveal"><h3>Frontend</h3><ul><li>Next.js 14, App Router</li><li>TypeScript</li><li>Tailwind CSS</li><li>shadcn/ui</li><li>Recharts</li></ul></div>
+      <div class="card reveal" style="--d:.06s"><h3>Backend</h3><ul><li>Node.js</li><li>Fastify</li><li>TypeScript</li><li>Zod schemas</li></ul></div>
+      <div class="card reveal" style="--d:.12s"><h3>Data and AI</h3><ul><li>PostgreSQL (Supabase)</li><li>pgvector</li><li>Anthropic Claude</li><li>Voyage AI embeddings</li></ul></div>
+      <div class="card reveal" style="--d:.18s"><h3>Infrastructure</h3><ul><li>Supabase Cloud + Auth</li><li>Vercel (dashboard)</li><li>Railway (API)</li><li>npm workspaces</li></ul></div>
+    </div>
+
+    <h3 class="reveal" style="font-size:15px;margin:40px 0 14px">Clause categories tracked, from the CUAD taxonomy</h3>
+    <div class="categories reveal">
+      <span>Governing Law</span><span>Termination for Convenience</span><span>Cap on Liability</span><span>Uncapped Liability</span><span>Non-Compete</span><span>Exclusivity</span><span>IP Ownership Assignment</span><span>Anti-Assignment</span><span>Change of Control</span><span>Insurance</span>
     </div>
   </section>
 
@@ -419,7 +826,7 @@
 
 <footer>
   <div class="wrap">
-    <div class="meta">ClauseGuard</div>
+    <div class="meta">ClauseGuard · Built by Ambarish Pathak on the Contract Understanding Atticus Dataset (CUAD)</div>
     <div class="links">
       <a href="https://github.com/apatha32/ClauseGuard-Contract-Compliance-Risk-Extraction-Agent" target="_blank" rel="noopener">Repository</a>
       <a href="https://clauseguard-self.vercel.app" target="_blank" rel="noopener">Live Demo</a>
@@ -427,5 +834,137 @@
   </div>
 </footer>
 
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Theme toggle (remembered per browser)
+  const root = document.documentElement;
+  try { const t = localStorage.getItem("cg-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("theme").addEventListener("click", () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("cg-theme", root.dataset.theme); } catch (e) {}
+  });
+
+  // Scroll progress, header border, active nav link
+  const bar = document.getElementById("progress");
+  const header = document.getElementById("top");
+  const navLinks = [...document.querySelectorAll(".nav-links a")];
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+    header.classList.toggle("scrolled", scrollY > 8);
+    let current = null;
+    for (const a of navLinks) {
+      const s = document.querySelector(a.getAttribute("href"));
+      if (s && s.getBoundingClientRect().top < 140) current = a;
+    }
+    navLinks.forEach(a => a.classList.toggle("active", a === current));
+  };
+  addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // Count-up numbers
+  const fmt = (v, d) => v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const countUp = el => {
+    const target = parseFloat(el.dataset.count), d = +(el.dataset.decimals || 0), suf = el.dataset.suffix || "";
+    if (reduce) return;
+    const t0 = performance.now(), dur = 1400;
+    const tick = now => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(target * e, d) + suf;
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  // Per-category eval data (eval/reports, claude-sonnet-5, prompt v1)
+  const cats = [
+    ["Governing Law", 100, 100, 100],
+    ["Anti-Assignment", 100, 95.8, 97.9],
+    ["IP Ownership Assignment", 90.9, 100, 95.2],
+    ["Non-Compete", 88.9, 100, 94.1],
+    ["Insurance", 100, 81.8, 90.0],
+    ["Change of Control", 80.0, 88.9, 84.2],
+    ["Uncapped Liability", 83.3, 83.3, 83.3],
+    ["Exclusivity", 64.3, 90.0, 75.0],
+    ["Termination for Convenience", 64.3, 69.2, 66.7],
+    ["Cap on Liability", 100, 42.9, 60.0],
+  ];
+  const idx = { p: 1, r: 2, f1: 3 };
+  const barsEl = document.getElementById("bars");
+  barsEl.innerHTML = cats.map(c => `<div class="bar"><span class="name" title="${c[0]}">${c[0]}</span><div class="track"><div class="fill"></div></div><span class="v"></span></div>`).join("");
+  let metric = "f1", barsShown = false;
+  const drawBars = () => {
+    barsEl.querySelectorAll(".bar").forEach((row, i) => {
+      const v = cats[i][idx[metric]];
+      const fill = row.querySelector(".fill");
+      fill.style.width = barsShown ? v + "%" : "0";
+      fill.classList.toggle("low", v < 75);
+      row.querySelector(".v").textContent = v.toFixed(1) + "%";
+      fill.style.transitionDelay = barsShown ? (i * 40) + "ms" : "0ms";
+    });
+  };
+  drawBars();
+  document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+    metric = b.dataset.m;
+    document.querySelectorAll(".seg button").forEach(x => x.classList.toggle("on", x === b));
+    drawBars();
+  }));
+
+  // Reveal on scroll, plus one-shot triggers
+  const io = new IntersectionObserver(entries => {
+    for (const en of entries) {
+      if (!en.isIntersecting) continue;
+      const el = en.target;
+      el.classList.add("in");
+      el.querySelectorAll?.("[data-count]").forEach(countUp);
+      if (el.contains(barsEl)) { barsShown = true; drawBars(); }
+      const ring = el.querySelector?.(".ring .val");
+      if (ring) ring.style.strokeDashoffset = 339.3 * (1 - ring.dataset.pct / 100);
+      io.unobserve(el);
+    }
+  }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+  document.querySelectorAll(".reveal, #pipe").forEach(el => io.observe(el));
+
+  // Interactive diagram
+  const svg = document.getElementById("diagram");
+  if (reduce && svg.pauseAnimations) svg.pauseAnimations();
+  const nameEl = document.getElementById("dg-name"), whereEl = document.getElementById("dg-where"), bodyEl = document.getElementById("dg-body");
+  const defaults = [nameEl.textContent, whereEl.textContent, bodyEl.textContent];
+  const edges = [...svg.querySelectorAll(".dg-edge")];
+  const nodes = [...svg.querySelectorAll(".node")];
+  const select = node => {
+    nodes.forEach(n => n.classList.toggle("on", n === node));
+    svg.classList.toggle("dim", !!node);
+    const key = node && node.dataset.n;
+    edges.forEach(e => e.classList.toggle("hot", !!key && e.dataset.e.split(" ").includes(key)));
+    [nameEl.textContent, whereEl.textContent, bodyEl.textContent] = node
+      ? [node.dataset.name, node.dataset.where, node.dataset.body] : defaults;
+  };
+  nodes.forEach(n => {
+    n.addEventListener("mouseenter", () => select(n));
+    n.addEventListener("focus", () => select(n));
+    n.addEventListener("click", () => select(n));
+    n.addEventListener("mouseleave", () => { if (document.activeElement !== n) select(null); });
+    n.addEventListener("blur", () => select(null));
+  });
+
+  // Until real demo credentials are filled in, hide the panel and point visitors to sign-up
+  if (document.getElementById("demo-email").textContent.startsWith("REPLACE_")) {
+    document.querySelector(".demo-creds").innerHTML =
+      '<p class="note" style="font-size:14px;margin:0">Demo credentials are coming soon. In the meantime, create a free account on the live demo with a real email address and confirm it to sign in.</p>';
+  }
+
+  // Copy-to-clipboard for demo credentials
+  document.querySelectorAll(".copy").forEach(btn => btn.addEventListener("click", async () => {
+    const text = document.getElementById(btn.dataset.copy).textContent.trim();
+    try { await navigator.clipboard.writeText(text); } catch (e) { return; }
+    btn.textContent = "Copied"; btn.classList.add("done");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1600);
+  }));
+})();
+</script>
 </body>
 </html>
